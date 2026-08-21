@@ -91,3 +91,29 @@ The initial Day 4 asynchronous flow was tested successfully.
 The Day 4 prototype successfully demonstrates the intended
 asynchronous check-in flow without waiting synchronously for
 badge printing.
+
+## Job Correlation and Webhook Validation
+
+The prototype was strengthened to associate each generated print
+job ID with its attendee ID.
+
+The print-completion webhook now verifies:
+
+1. The job ID exists.
+2. The job belongs to the attendee specified in the webhook.
+3. The attendee is currently in the PENDING state.
+
+Completed jobs are removed from the in-memory job tracking object
+after successful processing.
+
+### Validation Tests
+
+- Normal queued print flow: passed.
+- Unknown/fake job ID: rejected with `404 Print job not found`.
+- Duplicate check-in: rejected with `409 Conflict`.
+- Invalid attendee: rejected with `404 Attendee not found`.
+
+A real-job/wrong-attendee test was identified as an additional
+correlation test but was not completed manually because the
+prototype's simulated three-second print window made the timing
+awkward for manual testing.

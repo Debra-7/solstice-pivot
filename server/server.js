@@ -13,6 +13,10 @@ const PORT = 5000;
 
 const checkInStatus = {};
 
+// Track queued print jobs so webhook responses can be
+// matched to the correct attendee and print request.
+const printJobs = {};
+
 app.use(cors());
 app.use(express.json());
 
@@ -60,6 +64,12 @@ app.post('/api/check-in', (req, res) => {
         name: attendee.name
     };
 
+    // Store the relationship between the print job and attendee
+// so the completion webhook can verify the job later.
+    printJobs[jobId] = {
+        attendeeId: attendee.id
+};
+
     // Mark the attendee as pending before adding the job
     //This prevents another scan from creating a duplicate job
     checkInStatus[attendeeId] = 'PENDING';
@@ -105,19 +115,41 @@ app.post('/webhook/print-complete', (req, res) => {
         });
     }
 
-    // Only accept a completion webhook for an attendee
-// whose check-in is currently waiting for the printer.
-    if (checkInStatus[attendeeId] !== 'PENDING') {
-        return res.status(409).json({
-            success: false,
-            message: 'Attendee is not awaiting print completion'
-        });
-    }
+    // Find the print job associated with the webhook.
+const printJob = printJobs[jobId];
+
+if (!printJob) {
+    return res.status(404).json({
+        success: false,
+        message: 'Print job not found'
+    });
+}
+
+// Make sure the job belongs to the attendee in the webhook.
+if (printJob.attendeeId !== attendeeId) {
+    return res.status(409).json({
+        success: false,
+        message: 'Print job does not match attendee'
+    });
+}
+
+// Only accept completion for an attendee whose check-in
+// is currently waiting for the printer.
+if (checkInStatus[attendeeId] !== 'PENDING') {
+    return res.status(409).json({
+        success: false,
+        message: 'Attendee is not awaiting print completion'
+    });
+}
 
     // The attendee is only marked CHECKED_IN after the server
     //receives confirmation that printing actually completed.
     checkInStatus[attendeeId] = 'CHECKED_IN';
 
+    // Remove the completed job from memory because it has
+    // already been successfully processed.
+    delete printJobs[jobId];
+    
     console.log(
         `Attendee ${attendeeId} is now CHECKED_IN`
     );
