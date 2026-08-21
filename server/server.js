@@ -1,5 +1,6 @@
 const express = require('express');
 const cors = require('cors');
+const path = require('path');
 
 const { printBadge } = require('./printer');
 const attendees = require('./data/attendees.json');
@@ -12,10 +13,10 @@ const checkInStatus = {};
 app.use(cors());
 app.use(express.json());
 
+app.use(express.static(path.join(__dirname, '../client')));
+
 app.get('/', (req, res) => {
-    res.json({
-        message: 'Solstice check-in server is running'
-    });
+    res.sendFile(path.join(__dirname, '../client/index.html'));
 });
 
 app.post('/api/check-in', async (req, res) => {
