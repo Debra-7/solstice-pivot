@@ -117,3 +117,51 @@ A real-job/wrong-attendee test was identified as an additional
 correlation test but was not completed manually because the
 prototype's simulated three-second print window made the timing
 awkward for manual testing.
+
+## Failure Handling Decision
+
+The asynchronous flow must distinguish successful printing from
+failed printing.
+
+The server will only transition an attendee from `PENDING` to
+`CHECKED_IN` after receiving a valid `PRINTED` completion webhook.
+
+If the printer reports a failure, the attendee will be moved to
+a `PRINT_FAILED` state and will not be considered checked in.
+
+### Reason
+
+A successful API request only confirms that the check-in request
+was accepted. It does not prove that the physical badge was
+successfully printed.
+
+Separating request acceptance from print completion prevents an
+attendee from being incorrectly marked as checked in when the
+printer operation fails.
+
+### Prototype Limitation
+
+The prototype will simulate printer failures rather than
+communicating with a physical printer.
+
+A production implementation would require persistent job storage,
+retry policies, failure monitoring, and potentially a dead-letter
+queue for jobs that repeatedly fail.
+
+## Failure Handling Test
+
+The printer worker was temporarily configured to force a simulated
+printing failure in order to test the failure path deterministically.
+
+The test confirmed that:
+
+- A check-in request initially entered the `PENDING` state.
+- The simulated printer reported `PRINT_FAILED`.
+- The server changed the attendee state to `PRINT_FAILED`.
+- The attendee was not incorrectly marked as `CHECKED_IN`.
+- A subsequent check-in request for the same attendee was accepted.
+- The retry generated a new print job ID and returned the attendee
+  to the `PENDING` state.
+
+The printer simulation was then restored to its normal probabilistic
+success/failure behavior.

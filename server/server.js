@@ -108,12 +108,13 @@ app.post('/webhook/print-complete', (req, res) => {
         });
     }
 
-    if (status !== 'PRINTED') {
-        return res.status(400).json({
-            success: false,
-            message: 'Unsupported print status'
-        });
-    }
+    // Only accept known printer completion states.
+if (status !== 'PRINTED' && status !== 'PRINT_FAILED') {
+    return res.status(400).json({
+        success: false,
+        message: 'Unsupported print status'
+    });
+}
 
     // Find the print job associated with the webhook.
 const printJob = printJobs[jobId];
@@ -142,25 +143,43 @@ if (checkInStatus[attendeeId] !== 'PENDING') {
     });
 }
 
-    // The attendee is only marked CHECKED_IN after the server
-    //receives confirmation that printing actually completed.
-    checkInStatus[attendeeId] = 'CHECKED_IN';
+    if (status === 'PRINT_FAILED') {
+    // Do not mark the attendee as checked in when printing fails.
+    checkInStatus[attendeeId] = 'PRINT_FAILED';
 
-    // Remove the completed job from memory because it has
-    // already been successfully processed.
-    delete printJobs[jobId];
-    
     console.log(
-        `Attendee ${attendeeId} is now CHECKED_IN`
+        `Badge printing failed for attendee ${attendeeId}`
     );
+
+    // Remove the failed job from memory after processing it.
+    delete printJobs[jobId];
 
     return res.json({
         success: true,
         attendeeId,
         jobId,
-        status: 'CHECKED_IN',
-        message: 'Print completion confirmed'
+        status: 'PRINT_FAILED',
+        message: 'Badge printing failed'
     });
+}
+
+// Only mark the attendee CHECKED_IN after successful printing.
+checkInStatus[attendeeId] = 'CHECKED_IN';
+
+// Remove the successfully completed job from memory.
+delete printJobs[jobId];
+
+console.log(
+    `Attendee ${attendeeId} is now CHECKED_IN`
+);
+
+return res.json({
+    success: true,
+    attendeeId,
+    jobId,
+    status: 'CHECKED_IN',
+    message: 'Print completion confirmed'
+});
 });
 
 //Start the background printer worker after the HTTP server
