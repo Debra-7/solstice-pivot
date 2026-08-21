@@ -3,18 +3,49 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Solstice Event Check-In</title>
+    <title>Solstice Events | Check-In</title>
+    <link rel="stylesheet" href="styles.css">
 </head>
 
 <body>
-    <h1>Solstice Event Check-In</h1>
+    <main class="kiosk">
+        <header class="header">
+            <p class="eyebrow">SOLSTICE EVENTS</p>
+            <h1>Event Check-In</h1>
+            <p class="subtitle">
+                Scan an attendee QR code or enter their attendee ID.
+            </p>
+        </header>
 
-    <label for="attendeeId">Attendee ID</label>
-    <input type="text" id="attendeeId" placeholder="e.g. A001">
+        <section class="checkin-card">
+            <label for="attendeeId">Attendee ID</label>
 
-    <button id="checkInButton">Check In</button>
+            <input
+                type="text"
+                id="attendeeId"
+                placeholder="e.g. A001"
+                autocomplete="off"
+                autofocus
+            >
 
-    <p id="status"></p>
+            <button id="checkInButton">
+                Check In
+            </button>
+
+            <div id="statusCard" class="status-card hidden">
+                <div id="statusIcon" class="status-icon"></div>
+
+                <div>
+                    <p id="statusTitle" class="status-title"></p>
+                    <p id="statusMessage" class="status-message"></p>
+                </div>
+            </div>
+        </section>
+
+        <footer>
+            <p>Solstice Events • Conference Check-In Kiosk</p>
+        </footer>
+    </main>
 
     <script src="script.js"></script>
 </body>
