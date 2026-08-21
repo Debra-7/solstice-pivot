@@ -94,6 +94,25 @@ app.post('/api/check-in', (req, res) => {
     });
 });
 
+app.get('/api/check-in-status/:attendeeId', (req, res) => {
+    const { attendeeId } = req.params;
+
+    const status = checkInStatus[attendeeId];
+
+    if (!status) {
+        return res.status(404).json({
+            success: false,
+            message: 'No check-in found for this attendee'
+        });
+    }
+
+    return res.json({
+        success: true,
+        attendeeId,
+        status
+    });
+});
+
 app.post('/webhook/print-complete', (req, res) => {
     const { jobId, attendeeId, status } = req.body;
 

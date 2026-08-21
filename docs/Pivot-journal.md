@@ -165,3 +165,54 @@ The test confirmed that:
 
 The printer simulation was then restored to its normal probabilistic
 success/failure behavior.
+
+## End-to-End UI Validation
+
+The kiosk UI was updated to support the asynchronous printing model.
+
+When a check-in request is accepted, the UI now displays a pending
+"Printing badge" state instead of immediately displaying "Checked In".
+
+The UI periodically checks the attendee's check-in status through the
+server while the printer worker processes the job.
+
+### Successful Flow
+
+A successful test confirmed that:
+
+1. The attendee check-in request was accepted with `PENDING` status.
+2. The UI displayed the pending printing state.
+3. The printer worker processed the queued job.
+4. The printer completion webhook was received.
+5. The attendee transitioned to `CHECKED_IN`.
+6. The UI then displayed "Checked In".
+
+### Duplicate Scan Test
+
+A second check-in attempt for an attendee who was already
+`CHECKED_IN` was rejected. No second print job was created.
+
+### Failure and Retry Test
+
+A deterministic printer failure was temporarily enabled during testing.
+
+The test confirmed that:
+
+1. The check-in request entered `PENDING`.
+2. The printer worker reported `PRINT_FAILED`.
+3. The server changed the attendee state to `PRINT_FAILED`.
+4. The UI displayed a badge printing failure message.
+5. A subsequent check-in request was accepted as a retry.
+6. The retry generated a new print job.
+
+The printer simulation was restored to its normal success/failure
+behavior after testing.
+
+## Pivot Outcome
+
+The Day 3 synchronous printer flow was replaced on the `day4-pivot`
+branch with an asynchronous queue-based workflow.
+
+The new design separates check-in request acceptance from physical
+badge printing. An attendee is only considered checked in after the
+server receives a valid successful print completion webhook.
