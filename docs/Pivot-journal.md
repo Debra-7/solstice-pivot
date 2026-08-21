@@ -74,6 +74,14 @@ business logic.
 
 The initial Day 4 asynchronous flow was tested successfully.
 
+### Attendee Coverage
+
+Testing was performed using multiple attendees from the sample
+attendee dataset, including A001, A002, A003, and A004.
+
+The tests covered successful check-in, duplicate scanning, simulated
+printing failure, and retry behavior.
+
 ### Tests Completed
 
 - Valid attendee returned `202 Accepted` with `PENDING` status.
@@ -207,6 +215,25 @@ The test confirmed that:
 
 The printer simulation was restored to its normal success/failure
 behavior after testing.
+
+## Out-of-Order Confirmation Handling
+
+The asynchronous design does not assume that print confirmations will
+arrive in the same order as print requests.
+
+Each print request receives a unique `jobId`, and the server stores the
+relationship between the job and attendee. When a webhook arrives, the
+server verifies that the job exists, that it belongs to the attendee
+specified in the webhook, and that the attendee is still in the
+`PENDING` state.
+
+This prevents a late or duplicate completion webhook from incorrectly
+changing an attendee's state after the check-in has already been
+completed or has entered a failure state.
+
+Because duplicate check-in requests are rejected while an attendee is
+`PENDING`, only one active print job can exist for an attendee at a
+time
 
 ## Pivot Outcome
 
